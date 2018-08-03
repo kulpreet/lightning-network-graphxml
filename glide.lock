@@ -1,0 +1,12 @@
+hash: 8439b8c925300664cda3abf825455aaee2e0d3ed6b8c1a3059105d61bd10488a
+updated: 2018-08-03T04:54:43.841213993+02:00
+imports:
+- name: github.com/awalterschulze/gographviz
+  version: 49969fe6eded40a16118a63c7742990e5808308e
+  subpackages:
+  - ast
+  - internal/errors
+  - internal/lexer
+  - internal/parser
+  - internal/token
+testImports: []

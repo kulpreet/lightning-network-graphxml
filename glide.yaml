@@ -1,0 +1,3 @@
+package: github.com/kulpreet/lnd-graph-parser
+import:
+- package: github.com/awalterschulze/gographviz
