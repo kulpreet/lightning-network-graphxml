@@ -1,3 +1,5 @@
 testdata
 vendor
 lightning-network-graphxml
+testnet.xml
+*~
