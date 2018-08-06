@@ -33,7 +33,7 @@ type Address struct {
 type Node struct {
 	XMLName   xml.Name `xml:"node"`
 	LastUpdate int `json:"last_update" xml:"last_update,attr"`
-	PubKey string `json:"pub_key" xml:"pub_key,attr"`
+	PubKey string `json:"pub_key" xml:"id,attr"`
 	Alias string `json:"alias" xml:"alias,attr"`
 	Addresses []Address
 	Color string `json:"color" xml:"color,attr"` 
@@ -64,8 +64,8 @@ type DirectedEdge struct {
 	ChannelId string `json:"channel_id" xml:"channel_id,attr"`
 	ChanPoint string `json:"chan_point" xml:"channel_point,attr"`
 	LastUpdate int `json:"last_update" xml:"last_update,attr"`
-	OutPub string `json:"node1_pub" xml:"out_pub,attr"`
-	InPub string `json:"node2_pub" xml:"in_pub,attr"`
+	Source string `json:"node1_pub" xml:"source,attr"`
+	Target string `json:"node2_pub" xml:"target,attr"`
 	Capacity string `json:"capacity" xml:"capacity,attr"`
 
 	// NodePolicy flattened into directed edge
@@ -84,18 +84,13 @@ type Graph struct {
 	NodeIds string `xml:"parse.nodeids,attr"`
 	EdgeIds string `xml:"parse.edgeids,attr"`
 	ParseOrder string `xml:"parse.order,attr"`
+	EdgeDefault string `xml:"edgedefault,attr"`
 	Nodes []Node
 	Edges []Edge
 }
 
 type DirectedGraph struct {
-	XMLName   xml.Name `xml:"graph"`
-	Id string `xml:"id,attr"`
-	NumNodes int `xml:"parse.nodes,attr"`
-	NumEdges int `xml:"parse.edges,attr"`
-	NodeIds string `xml:"parse.nodeids,attr"`
-	EdgeIds string `xml:"parse.edgeids,attr"`
-	ParseOrder string `xml:"parse.order,attr"`
+	Graph
 	Nodes []Node
 	Edges []DirectedEdge
 }
@@ -104,12 +99,12 @@ func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
 	var directedEdges []DirectedEdge
 	directedGraph = &DirectedGraph{}
 	for _, edge := range g.Edges {
-		inDir := DirectedEdge{
+		outDir := DirectedEdge{
 			ChannelId: edge.ChannelId,
 			ChanPoint: edge.ChanPoint,
 			LastUpdate: edge.LastUpdate,
-			OutPub: edge.Node1Pub,
-			InPub: edge.Node2Pub,
+			Source: edge.Node1Pub,
+			Target: edge.Node2Pub,
 			Capacity: edge.Capacity,
 
 			TimeLockDelta: edge.Node1Policy.TimeLockDelta,
@@ -118,12 +113,12 @@ func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
 			FeeRateMilliMsat: edge.Node1Policy.FeeRateMilliMsat,
 			Disabled: edge.Node1Policy.Disabled,			
 		}
-		outDir := DirectedEdge{
+		inDir := DirectedEdge{
 			ChannelId: edge.ChannelId,
 			ChanPoint: edge.ChanPoint,
 			LastUpdate: edge.LastUpdate,
-			InPub: edge.Node1Pub,
-			OutPub: edge.Node2Pub,
+			Source: edge.Node2Pub,
+			Target: edge.Node1Pub,
 			Capacity: edge.Capacity,
 
 			TimeLockDelta: edge.Node2Policy.TimeLockDelta,
@@ -141,6 +136,7 @@ func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
 	directedGraph.NodeIds = g.NodeIds
 	directedGraph.EdgeIds = g.EdgeIds
 	directedGraph.ParseOrder = g.ParseOrder
+	directedGraph.EdgeDefault = g.EdgeDefault
 	directedGraph.Nodes = g.Nodes
 	directedGraph.Edges = directedEdges
 

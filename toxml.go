@@ -41,6 +41,7 @@ func main() {
 		NodeIds: "free",
 		EdgeIds: "free",
 		ParseOrder: "nodesfirst",
+		EdgeDefault: "directed",
 	}
     if err != nil {
         fmt.Printf("Error opening file %s\n", err)
