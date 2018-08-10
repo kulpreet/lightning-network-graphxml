@@ -36,6 +36,18 @@ var footer string = `</graphml>`
 
 func main() {
 	graphFile, err := os.Open("testdata/lndgraph.json")
+	keys := []Key{
+		Key{Id: "name", For: "node", Name: "name", Type: "string"},
+
+		Key{Id: "chan_point", For: "edge", Name: "chan_point", Type: "string"},
+		Key{Id: "last_update", For: "edge", Name: "last_update", Type: "string"},
+		Key{Id: "capacity", For: "edge", Name: "capacity", Type: "int"},
+		Key{Id: "time_lock_delta", For: "edge", Name: "time_lock_delta", Type: "int"},
+		Key{Id: "min_htlc", For: "edge", Name: "min_htlc", Type: "int", Default: 0},
+		Key{Id: "fee_base_msat", For: "edge", Name: "fee_base_msat", Type: "int"},
+		Key{Id: "fee_rate_milli_msat", For: "edge", Name: "fee_rate_milli_msat", Type: "int"},
+		Key{Id: "disabled", For: "edge", Name: "disabled", Type: "string"},
+	}
 	var graph = Graph{
 		Id: "LND",
 		NodeIds: "free",
@@ -57,11 +69,17 @@ func main() {
 
 	directedGraph := graph.makeDirected()
 	
+	keysOutput, err := xml.MarshalIndent(keys, "  ", "    ")
+	if err != nil {
+        fmt.Printf("error encoding xml %#v\n", err)
+	}
+
 	output, err := xml.MarshalIndent(directedGraph, "  ", "    ")
 	if err != nil {
         fmt.Printf("error encoding xml %#v\n", err)
 	}
 	os.Stdout.Write([]byte(header))
+	os.Stdout.Write(keysOutput)
 	os.Stdout.Write(output)
 	os.Stdout.Write([]byte(footer))
     return

@@ -21,8 +21,31 @@
 package main
 
 import (
+	"fmt"
 	"encoding/xml"
 )
+
+var _ = fmt.Printf // For debugging; delete when done.
+
+type Data struct {
+	XMLName   xml.Name `xml:"data"`
+	Key string `xml:"key,attr"`
+	Value interface{} `xml:",chardata"`
+}
+
+type CheckedData struct {
+	XMLName   xml.Name `xml:"data"`
+	Key string `xml:"key,attr"`
+	Value interface{} `xml:",chardata"`
+}
+
+func (d *Data) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if (d.Value == "") {
+		return nil
+	}
+	e.EncodeElement(CheckedData(*d), start)
+	return nil
+}
 
 type Address struct {
 	XMLName   xml.Name `xml:"address"`
@@ -32,11 +55,12 @@ type Address struct {
 
 type Node struct {
 	XMLName   xml.Name `xml:"node"`
-	LastUpdate int `json:"last_update" xml:"last_update,attr"`
+	LastUpdate int `json:"last_update" xml:"-"`
 	PubKey string `json:"pub_key" xml:"id,attr"`
-	Alias string `json:"alias" xml:"alias,attr"`
-	Addresses []Address
-	Color string `json:"color" xml:"color,attr"` 
+	Alias string `json:"alias" xml:"-"`
+	Addresses []Address `xml:"-"`
+	Color string `json:"color" xml:"-"`
+	Attrs []Data `xml:"data"`
 }
 
 type NodePolicy struct {
@@ -61,23 +85,24 @@ type Edge struct {
 
 type DirectedEdge struct {
 	XMLName   xml.Name `xml:"edge"`
-	ChannelId string `json:"channel_id" xml:"channel_id,attr"`
-	ChanPoint string `json:"chan_point" xml:"channel_point,attr"`
-	LastUpdate int `json:"last_update" xml:"last_update,attr"`
+	Id string `json:"channel_id" xml:"id,attr"`
 	Source string `json:"node1_pub" xml:"source,attr"`
 	Target string `json:"node2_pub" xml:"target,attr"`
-	Capacity string `json:"capacity" xml:"capacity,attr"`
+	Attrs []Data `xml:"data"`
+}
 
-	// NodePolicy flattened into directed edge
-	TimeLockDelta int `json:"time_lock_delta,attr" xml:"timelock_delta,attr"`
-	MinHtlc string `json:"min_htlc,attr" xml:"min_htlc,attr"`
-	FeeBaseMsat string `json:"fee_base_msat,attr" xml:"fee_base_msat,attr"`
-	FeeRateMilliMsat string `json:"fee_rate_milli_msat,attr" xml:"fee_rate_milli_msat,attr"`
-	Disabled bool `json:"disabled,attr" xml:"disabled,attr"`
+type Key struct {
+	XMLName   xml.Name `xml:"key"`
+	Id string `xml:"id,attr"`
+	For string `xml:"for,attr"`
+	Name string `xml:"attr.name,attr"`
+	Type string `xml:"attr.type,attr"`
+	Default interface{} `xml:"default"`
 }
 
 type Graph struct {
 	XMLName   xml.Name `xml:"graph"`
+	Keys []Key
 	Id string `xml:"id,attr"`
 	NumNodes int `xml:"parse.nodes,attr"`
 	NumEdges int `xml:"parse.edges,attr"`
@@ -85,51 +110,65 @@ type Graph struct {
 	EdgeIds string `xml:"parse.edgeids,attr"`
 	ParseOrder string `xml:"parse.order,attr"`
 	EdgeDefault string `xml:"edgedefault,attr"`
-	Nodes []Node
-	Edges []Edge
+	Nodes []*Node
+	Edges []*Edge
 }
 
 type DirectedGraph struct {
 	Graph
-	Nodes []Node
-	Edges []DirectedEdge
+	Nodes []*Node
+	Edges []*DirectedEdge
 }
 
 func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
-	var directedEdges []DirectedEdge
+	var directedEdges []*DirectedEdge
 	directedGraph = &DirectedGraph{}
+	for _, node := range g.Nodes {
+		node.Attrs = []Data{
+			//Data{Key: "last_update", Value: node.LastUpdate},
+			Data{Key: "name", Value: node.Alias},
+			//Data{Key: "color", Value: node.Color},
+		}
+	}
 	for _, edge := range g.Edges {
-		outDir := DirectedEdge{
-			ChannelId: edge.ChannelId,
-			ChanPoint: edge.ChanPoint,
-			LastUpdate: edge.LastUpdate,
+		outDir := &DirectedEdge{
+			Id: edge.ChannelId,
 			Source: edge.Node1Pub,
 			Target: edge.Node2Pub,
-			Capacity: edge.Capacity,
-
-			TimeLockDelta: edge.Node1Policy.TimeLockDelta,
-			MinHtlc: edge.Node1Policy.MinHtlc,
-			FeeBaseMsat: edge.Node1Policy.FeeBaseMsat,
-			FeeRateMilliMsat: edge.Node1Policy.FeeRateMilliMsat,
-			Disabled: edge.Node1Policy.Disabled,			
 		}
-		inDir := DirectedEdge{
-			ChannelId: edge.ChannelId,
-			ChanPoint: edge.ChanPoint,
-			LastUpdate: edge.LastUpdate,
+		outDir.Attrs = []Data{
+			Data{Key: "chan_point", Value: edge.ChanPoint},
+			Data{Key: "last_update", Value: edge.LastUpdate},
+			Data{Key: "capacity", Value: edge.Capacity},
+			
+			Data{Key: "time_lock_delta", Value: edge.Node1Policy.TimeLockDelta},
+			Data{Key: "min_htlc", Value: edge.Node1Policy.MinHtlc},
+			Data{Key: "fee_base_msat", Value: edge.Node1Policy.FeeBaseMsat},
+			Data{Key: "fee_rate_milli_msat", Value: edge.Node1Policy.FeeRateMilliMsat},
+			Data{Key: "disabled", Value: edge.Node1Policy.Disabled},
+		}
+		
+		inDir := &DirectedEdge{
+			Id: edge.ChannelId,
 			Source: edge.Node2Pub,
 			Target: edge.Node1Pub,
-			Capacity: edge.Capacity,
 
-			TimeLockDelta: edge.Node2Policy.TimeLockDelta,
-			MinHtlc: edge.Node2Policy.MinHtlc,
-			FeeBaseMsat: edge.Node2Policy.FeeBaseMsat,
-			FeeRateMilliMsat: edge.Node2Policy.FeeRateMilliMsat,
-			Disabled: edge.Node2Policy.Disabled,			
+			Attrs: []Data{
+				Data{Key: "chan_point", Value: edge.ChanPoint},
+				Data{Key: "last_update", Value: edge.LastUpdate},
+				Data{Key: "capacity", Value: edge.Capacity},
+				
+				Data{Key: "time_lock_delta", Value: edge.Node2Policy.TimeLockDelta},
+				Data{Key: "min_htlc", Value: edge.Node2Policy.MinHtlc},
+				Data{Key: "fee_base_msat", Value: edge.Node2Policy.FeeBaseMsat},
+				Data{Key: "fee_rate_milli_msat", Value: edge.Node2Policy.FeeRateMilliMsat},
+				Data{Key: "disabled", Value: edge.Node2Policy.Disabled},
+			},
 		}
 		directedEdges = append(directedEdges, inDir, outDir)
 	}
 	directedGraph.XMLName = g.XMLName
+	directedGraph.Keys = g.Keys
 	directedGraph.Id = g.Id
 	directedGraph.NumNodes = g.NumNodes
 	directedGraph.NumEdges = len(directedEdges)
