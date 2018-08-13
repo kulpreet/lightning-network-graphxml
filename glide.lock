@@ -1,5 +1,5 @@
-hash: 8439b8c925300664cda3abf825455aaee2e0d3ed6b8c1a3059105d61bd10488a
-updated: 2018-08-03T04:54:43.841213993+02:00
+hash: 02f269232220b667b757e8d452d1c30a6b9845e2ea51bfd1ce94eac7462ba0a3
+updated: 2018-08-13T22:22:22.735034095+02:00
 imports:
 - name: github.com/awalterschulze/gographviz
   version: 49969fe6eded40a16118a63c7742990e5808308e
@@ -9,4 +9,6 @@ imports:
   - internal/lexer
   - internal/parser
   - internal/token
+- name: github.com/jessevdk/go-flags
+  version: 1679536dcc895411a9f5848d9a0250be7856448c
 testImports: []

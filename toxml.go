@@ -21,6 +21,7 @@
 package main
 
 import (
+	"github.com/jessevdk/go-flags"
 	"fmt"
 	"encoding/json"
 	"os"
@@ -33,6 +34,20 @@ var header string = `<?xml version="1.0" encoding="UTF-8"?>
             xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns 
                                 http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">`
 var footer string = `</graphml>`
+
+// Flags.
+var opts = struct {
+	Directed  bool   `short:"d" long:"directed" description:"Convert to directed"`
+}{
+	Directed: false,
+}
+
+func init() {
+	_, err := flags.Parse(&opts)
+	if err != nil {
+		os.Exit(1)
+	}
+}
 
 func main() {
 	graphFile, err := os.Open("testdata/lndgraph.json")
@@ -53,7 +68,10 @@ func main() {
 		NodeIds: "free",
 		EdgeIds: "free",
 		ParseOrder: "nodesfirst",
-		EdgeDefault: "directed",
+		EdgeDefault: "undirected",
+	}
+	if (opts.Directed) {
+		graph.EdgeDefault = "directed"
 	}
     if err != nil {
         fmt.Printf("Error opening file %s\n", err)
@@ -67,17 +85,29 @@ func main() {
 	graph.NumNodes = len(graph.Nodes)
 	graph.NumEdges = len(graph.Edges)
 
-	directedGraph := graph.makeDirected()
-	
 	keysOutput, err := xml.MarshalIndent(keys, "  ", "    ")
 	if err != nil {
         fmt.Printf("error encoding xml %#v\n", err)
 	}
 
-	output, err := xml.MarshalIndent(directedGraph, "  ", "    ")
-	if err != nil {
-        fmt.Printf("error encoding xml %#v\n", err)
+	var output []byte
+	var directedGraph *DirectedGraph
+
+	graph.setupDataAttrs()
+	
+	if (opts.Directed) {
+		directedGraph = graph.makeDirected()
+		output, err = xml.MarshalIndent(directedGraph, "  ", "    ")
+		if err != nil {
+			fmt.Printf("error encoding xml %#v\n", err)
+		}
+	} else {
+		output, err = xml.MarshalIndent(graph, "  ", "    ")
+		if err != nil {
+			fmt.Printf("error encoding xml %#v\n", err)
+		}
 	}
+	
 	os.Stdout.Write([]byte(header))
 	os.Stdout.Write(keysOutput)
 	os.Stdout.Write(output)

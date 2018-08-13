@@ -73,14 +73,17 @@ type NodePolicy struct {
 
 type Edge struct {
 	XMLName   xml.Name `xml:"edge"`
-	ChannelId string `json:"channel_id" xml:"channel_id,attr"`
-	ChanPoint string `json:"chan_point" xml:"channel_point,attr"`
-	LastUpdate int `json:"last_update" xml:"last_update,attr"`
-	Node1Pub string `json:"node1_pub" xml:"node1_pub,attr"`
-	Node2Pub string `json:"node2_pub" xml:"node2_pub,attr"`
-	Capacity string `json:"capacity" xml:"capacity,attr"`
-	Node1Policy NodePolicy `json:"node1_policy" xml:"node1_policy"`
-	Node2Policy NodePolicy `json:"node2_policy" xml:"node2_policy"`
+	ChannelId string `json:"channel_id" xml:"id,attr"`
+	Node1Pub string `json:"node1_pub" xml:"source,attr"`
+	Node2Pub string `json:"node2_pub" xml:"target,attr"`
+
+	ChanPoint string `json:"chan_point" xml:"-"`
+	LastUpdate int `json:"last_update" xml:"-"`
+	Capacity string `json:"capacity" xml:"-"`
+	Node1Policy NodePolicy `json:"node1_policy" xml:"-"`
+	Node2Policy NodePolicy `json:"node2_policy" xml:"-"`
+
+	Attrs []Data `xml:"data"`
 }
 
 type DirectedEdge struct {
@@ -120,9 +123,7 @@ type DirectedGraph struct {
 	Edges []*DirectedEdge
 }
 
-func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
-	var directedEdges []*DirectedEdge
-	directedGraph = &DirectedGraph{}
+func (g *Graph) setupDataAttrs() {
 	for _, node := range g.Nodes {
 		node.Attrs = []Data{
 			//Data{Key: "last_update", Value: node.LastUpdate},
@@ -130,6 +131,18 @@ func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
 			//Data{Key: "color", Value: node.Color},
 		}
 	}
+	for _, edge := range g.Edges {
+		edge.Attrs = []Data{
+			Data{Key: "chan_point", Value: edge.ChanPoint},
+			Data{Key: "last_update", Value: edge.LastUpdate},
+			Data{Key: "capacity", Value: edge.Capacity},
+		}
+	}
+}
+
+func (g *Graph) makeDirected() (directedGraph *DirectedGraph) {
+	var directedEdges []*DirectedEdge
+	directedGraph = &DirectedGraph{}
 	for _, edge := range g.Edges {
 		outDir := &DirectedEdge{
 			Id: edge.ChannelId,
