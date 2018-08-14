@@ -37,8 +37,10 @@ var footer string = `</graphml>`
 
 // Flags.
 var opts = struct {
+	Filename  string   `short:"f" long:"filename" description:"File to read"`
 	Directed  bool   `short:"d" long:"directed" description:"Convert to directed"`
 }{
+	Filename: "",
 	Directed: false,
 }
 
@@ -50,7 +52,15 @@ func init() {
 }
 
 func main() {
-	graphFile, err := os.Open("testdata/lndgraph.json")
+	if (opts.Filename == "") {
+		fmt.Println("No file name specified")
+		os.Exit(1)
+	}
+	graphFile, err := os.Open(opts.Filename)
+	if (err != nil){
+		fmt.Printf("Error reading file %s: %s\n", opts.Filename, err)
+		os.Exit(1)		
+	}
 	keys := []Key{
 		Key{Id: "name", For: "node", Name: "name", Type: "string"},
 
