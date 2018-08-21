@@ -127,6 +127,7 @@ func (g *Graph) setupDataAttrs() {
 	for _, node := range g.Nodes {
 		node.Attrs = []Data{
 			//Data{Key: "last_update", Value: node.LastUpdate},
+			Data{Key: "pub_key", Value: node.PubKey},
 			Data{Key: "name", Value: node.Alias},
 			//Data{Key: "color", Value: node.Color},
 		}

@@ -62,6 +62,7 @@ func main() {
 		os.Exit(1)		
 	}
 	keys := []Key{
+		Key{Id: "pub_key", For: "node", Name: "pub_key", Type: "string"},
 		Key{Id: "name", For: "node", Name: "name", Type: "string"},
 
 		Key{Id: "chan_point", For: "edge", Name: "chan_point", Type: "string"},
