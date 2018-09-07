@@ -22,9 +22,11 @@ package main
 
 import (
 	"github.com/jessevdk/go-flags"
+	"path/filepath"
 	"fmt"
 	"encoding/json"
 	"os"
+	"strings"
 	"encoding/xml"
 )
 
@@ -118,10 +120,17 @@ func main() {
 			fmt.Printf("error encoding xml %#v\n", err)
 		}
 	}
+
+	name := strings.TrimSuffix(filepath.Base(opts.Filename), filepath.Ext(opts.Filename))
+    f, err := os.Create("out/" + name + ".xml")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
 	
-	os.Stdout.Write([]byte(header))
-	os.Stdout.Write(keysOutput)
-	os.Stdout.Write(output)
-	os.Stdout.Write([]byte(footer))
+	f.Write([]byte(header))
+	f.Write(keysOutput)
+	f.Write(output)
+	f.Write([]byte(footer))
     return
 }

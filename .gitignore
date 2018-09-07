@@ -3,3 +3,4 @@ vendor
 lightning-network-graphxml
 testnet.xml
 *~
+out
