@@ -83,9 +83,11 @@ func main() {
 		ParseOrder: "nodesfirst",
 		EdgeDefault: "undirected",
 	}
+
 	if (opts.Directed) {
 		graph.EdgeDefault = "directed"
 	}
+
     if err != nil {
         fmt.Printf("Error opening file %s\n", err)
     }
@@ -98,6 +100,10 @@ func main() {
 	graph.NumNodes = len(graph.Nodes)
 	graph.NumEdges = len(graph.Edges)
 
+	if (graph.NumEdges == 0) {
+		return
+	}
+
 	keysOutput, err := xml.MarshalIndent(keys, "  ", "    ")
 	if err != nil {
         fmt.Printf("error encoding xml %#v\n", err)
@@ -107,7 +113,7 @@ func main() {
 	var directedGraph *DirectedGraph
 
 	graph.setupDataAttrs()
-	
+
 	if (opts.Directed) {
 		directedGraph = graph.makeDirected()
 		output, err = xml.MarshalIndent(directedGraph, "  ", "    ")
